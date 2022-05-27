@@ -1,8 +1,8 @@
 import { dirname, join, relative, normalize } from "path";
 import { app, BrowserWindow, WebContents } from "electron";
 import { nativeDataController } from "./firu-native-data";
-import { IWindowOptions } from "./i-window-options";
-import { isPrimitive, isPrimitiveObject, IWindowData } from "./i-window-data";
+import { IWindowOptions } from "../i-window-options";
+import { isPrimitive, isPrimitiveObject, IWindowData } from "../i-window-data";
 
 /**
  * Allows to create Electron's BrowserWindow with empty page and load script.
@@ -17,8 +17,8 @@ export class FiruWindow {
    * @param options - window options
    */
   constructor(scriptPath: string, options: IWindowOptions) {
+    this.window = this.buildBrowserWindow(scriptPath, options);
     try {
-      this.window = this.buildBrowserWindow(scriptPath, options);
       this.setFiruData(options);
     } catch (e) {
       console.error("Firu error:", e);
@@ -52,7 +52,7 @@ export class FiruWindow {
 
   /** Triggers callback when window is resized (also maximized and unmaximized). */
   public set onResized(callback: (width: number, height: number) => void) {
-    const resizeCallback = (e) => {
+    const resizeCallback = () => {
       const size = this.window.getSize();
       callback(size[0], size[1]);
     };
@@ -129,7 +129,7 @@ export class FiruWindow {
   private buildBrowserWindowOptions(
     options: IWindowOptions
   ): Electron.BrowserWindowConstructorOptions {
-    const get = (val, def) => {
+    const get = function <T>(val: T, def: T): T {
       if (val !== undefined) return val;
       else return def;
     };
@@ -165,9 +165,9 @@ export class FiruWindow {
    * @param path - path to sanitize
    * @returns sanitized path
    */
-  private sanitizePath(path: string): string {
+  private sanitizePath(path: string): string | null {
     const correct = path.indexOf("\0") === -1 && /^[a-z0-9\\\/]+$/.test(path);
-    if (!correct) {
+    if (!correct || require.main === undefined) {
       return null;
     }
     path = normalize(path).replace(/^(\.\.(\/|\\|$))+/, "");
@@ -187,7 +187,7 @@ export class FiruWindow {
    */
   private setFiruData(options: IWindowOptions) {
     if (typeof options === "object" && "data" in options) {
-      if (this.validateWindowData(options.data)) {
+      if (options.data !== undefined && this.validateWindowData(options.data)) {
         nativeDataController.addData(this, options.data);
       } else {
         console.error("Invalid FiruWindow data.");

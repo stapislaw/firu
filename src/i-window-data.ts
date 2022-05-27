@@ -32,14 +32,13 @@ export function isPrimitive(val: unknown) {
  */
 export function isPrimitiveObject(obj: unknown) {
   if (typeof obj !== "object") return false;
+  if (obj == null) return true;
 
-  Object.keys(obj).forEach((key) => {
-    if (typeof obj[key] === "object" && !isPrimitiveObject(obj[key])) {
-      return false;
-    } else if (!isPrimitive(obj[key])) {
+  for (const [key, val] of Object.entries(obj)) {
+    if (!(isPrimitiveObject(val) || isPrimitive(val))) {
       return false;
     }
-  });
+  }
 
   return true;
 }

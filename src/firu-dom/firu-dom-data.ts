@@ -1,11 +1,13 @@
 import { ipcRenderer } from "electron";
+import { IWindowData } from "../i-window-data";
 
 /**
  * Controls data in renderer process.
  */
 export class FiruDOMData {
   private ready = false;
-  private resolve = null;
+  private resolve: Function | null = null;
+  public data: IWindowData = {};
 
   constructor() {
     // Request data from main process
@@ -37,10 +39,10 @@ export class FiruDOMData {
     try {
       const response = JSON.parse(ipcData);
       Object.keys(response.data).forEach((key) => {
-        this[key] = response.data[key];
+        this.data[key] = response.data[key];
       });
-      response.functions.forEach((key) => {
-        this[key] = this.getDataFunction(key);
+      response.functions.forEach((key: string) => {
+        this.data[key] = this.getDataFunction(key);
       });
     } catch (e) {
       console.error(

@@ -1,21 +1,21 @@
 import { ipcMain } from "electron";
 import { FiruWindow } from "./firu-window";
-import { IWindowData } from "./i-window-data";
+import { IWindowData } from "../i-window-data";
 
 /**
  * Controls data in main process. Stores data from every `FiruWindow` and handles request from renderer process via IPC.
  */
 export class FiruNativeData {
-  private dataMap: Map<number, Object>;
-  private functionsMap: Map<number, Object>;
+  private dataMap: Map<number, { [key: string]: unknown }>;
+  private functionsMap: Map<number, { [key: string]: Function }>;
 
   constructor() {
-    this.dataMap = new Map<number, Object>();
-    this.functionsMap = new Map<number, Object>();
+    this.dataMap = new Map();
+    this.functionsMap = new Map();
 
     ipcMain.handle("firu-data", (e) => this.handleDataRequest(e));
-    ipcMain.handle("firu-data-function", (e, ...args) =>
-      this.handleFunctionRequest(e, ...args)
+    ipcMain.handle("firu-data-function", (e, name, args) =>
+      this.handleFunctionRequest(e, name, args)
     );
   }
 
@@ -28,8 +28,8 @@ export class FiruNativeData {
   public addData(window: FiruWindow, data: IWindowData): void {
     const contentsID = window.webContents.id;
 
-    let functions = {};
-    let primitiveData = {};
+    let functions: { [key: string]: Function } = {};
+    let primitiveData: { [key: string]: unknown } = {};
 
     //Adds values to correct objects.
     Object.keys(data).forEach((key) => {
@@ -81,14 +81,24 @@ export class FiruNativeData {
    * @param args - ipc arguments
    * @returns string containing JSON with return of function.
    */
-  private async handleFunctionRequest(e: Electron.IpcMainInvokeEvent, ...args) {
+  private async handleFunctionRequest(
+    e: Electron.IpcMainInvokeEvent,
+    name: string,
+    args: string
+  ) {
     let returnData = null;
     try {
-      const name = args[0]; // Function name
-      const functionArgs = JSON.parse(args[1]); // Function arguments
+      const functionArgs = JSON.parse(args); // Function arguments
 
       // Calling function
-      returnData = this.functionsMap.get(e.sender.id)[name](...functionArgs);
+      const functions = this.functionsMap.get(e.sender.id);
+      if (
+        functions !== undefined &&
+        typeof name === "string" &&
+        typeof functions[name] === "function"
+      ) {
+        returnData = functions[name](...functionArgs);
+      }
     } catch (e) {
       console.error(
         "Unexpected error happened, when parsing request arguments",
@@ -121,6 +131,4 @@ export class FiruNativeData {
   }
 }
 
-let controller = undefined;
-if (typeof document === "undefined") controller = new FiruNativeData();
-export const nativeDataController: FiruNativeData = controller;
+export const nativeDataController: FiruNativeData = new FiruNativeData();

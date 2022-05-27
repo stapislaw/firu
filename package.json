@@ -2,17 +2,36 @@
   "name": "firu",
   "version": "0.0.1",
   "description": "Simple framework for Electron and React - BrowserWindow without HTML file, sending data from main to renderer process and more...",
-  "main": "dist/main.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./package.json": "./package.json",
+    "./native": "./dist/native.js",
+    "./dom": "./dist/dom.js"
+  },
+  "typesVersions": {
+    "*": {
+      "native": ["dist/native.d.ts"],
+      "dom": ["dist/dom.d.ts"]
+    }
+  },
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "prepublish": "tsc"
   },
   "author": "stapislaw",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stapislaw/firu.git"
+  },
   "license": "ISC",
   "dependencies": {
     "electron": "^19.0.1",
     "react-dom": "^17.0.2"
   },
   "devDependencies": {
-    "@types/react-dom": "^17.0.17"
+    "@types/react-dom": "^17.0.17",
+    "typescript": "^4.7.2"
   }
 }

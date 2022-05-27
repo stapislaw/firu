@@ -1,14 +1,12 @@
 import ReactDOM from "react-dom";
 import { FiruDOMData } from "./firu-dom-data";
 
-/**
- * Maintain firu renderer process functions.
- */
 class FiruDOM {
+  private static instance: FiruDOM;
   private dataController;
   private readyPromise: Promise<void>;
 
-  constructor() {
+  private constructor() {
     this.dataController = new FiruDOMData();
     this.readyPromise = new Promise((resolve) => {
       this.dataController.whenReady().then(() => {
@@ -22,8 +20,8 @@ class FiruDOM {
    *
    * @returns renderer process data controller
    */
-  get data(): object {
-    return this.dataController;
+  get data(): Object {
+    return this.dataController.data;
   }
 
   /**
@@ -41,16 +39,20 @@ class FiruDOM {
    *
    * @param element - element to render
    */
-  public render(element): void {
+  public render(element: any): void {
     this.whenReady().then(() => {
       const container = document.createElement("div");
       document.body.appendChild(container);
       ReactDOM.render(element, container);
     });
   }
+
+  public static getInstance(): FiruDOM {
+    if (!FiruDOM.instance) {
+      FiruDOM.instance = new FiruDOM();
+    }
+    return FiruDOM.instance;
+  }
 }
 
-// Constructs only in renderer process
-let firuDOM = undefined;
-if (typeof document !== "undefined") firuDOM = new FiruDOM();
-export const firu: FiruDOM = firuDOM;
+export const firu = FiruDOM.getInstance();
