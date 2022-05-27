@@ -1,0 +1,18 @@
+{
+  "name": "firu",
+  "version": "0.0.1",
+  "description": "Simple framework for Electron and React - BrowserWindow without HTML file, sending data from main to renderer process and more...",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc"
+  },
+  "author": "stapislaw",
+  "license": "ISC",
+  "dependencies": {
+    "electron": "^19.0.1",
+    "react-dom": "^17.0.2"
+  },
+  "devDependencies": {
+    "@types/react-dom": "^17.0.17"
+  }
+}
