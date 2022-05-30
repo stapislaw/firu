@@ -1,6 +1,6 @@
 {
   "name": "firu",
-  "version": "0.1.0",
+  "version": "0.0.3",
   "description": "Simple framework for Electron and React - BrowserWindow without HTML file, sending data from main to renderer process and more...",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
