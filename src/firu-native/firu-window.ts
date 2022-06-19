@@ -3,6 +3,12 @@ import { app, BrowserWindow, WebContents } from "electron";
 import { nativeDataController } from "./firu-native-data";
 import { IWindowOptions } from "../i-window-options";
 import { isPrimitive, isPrimitiveObject, IWindowData } from "../i-window-data";
+import { windowInfo } from "./firu-window-info";
+
+const INDEX_PATH = relative(
+  app.getAppPath(),
+  join(module.path, "../../index.html")
+);
 
 /**
  * Allows to create Electron's BrowserWindow with empty page and load script.
@@ -17,8 +23,9 @@ export class FiruWindow {
    * @param options - window options
    */
   constructor(scriptPath: string, options: IWindowOptions) {
-    this.window = this.buildBrowserWindow(scriptPath, options);
+    this.window = this.buildBrowserWindow(options);
     try {
+      this.initWindowInfo(scriptPath, options);
       this.setFiruData(options);
     } catch (e) {
       console.error("Firu error:", e);
@@ -88,28 +95,48 @@ export class FiruWindow {
   }
 
   /**
+   * Adds window info to FiruWindowInfo controller.
+   *
+   * @param scriptPath - path to script file
+   * @param options - window options
+   */
+  private initWindowInfo(scriptPath: string, options: IWindowOptions): void {
+    // Path sanitization
+    let path = this.sanitizePath(scriptPath);
+    if (path === null) {
+      throw new Error("Invalid scriptPath.");
+    }
+
+    // Preload sanitization if exists.
+    let preload = undefined;
+    if (typeof options.preload === "string") {
+      preload = this.sanitizePath(options.preload);
+    }
+    if (preload === null) {
+      throw new Error("Invalid preload.");
+    }
+
+    if (require.main) {
+      path = join(relative(__dirname, require.main.path), path);
+      if (preload) {
+        preload = join(relative(__dirname, require.main.path), preload);
+      }
+    }
+
+    windowInfo.addInfo(this, path, preload);
+  }
+
+  /**
    * Builds new BrowserWindow without content(about:blank) and loads given script in it.
    *
    * @param scriptPath - relative path to script file starting from directory of project main file
    * @param options - window options
    * @returns created BrowserWindow
    */
-  private buildBrowserWindow(
-    scriptPath: string,
-    options: IWindowOptions
-  ): BrowserWindow {
-    // Path sanitization
-    const path = this.sanitizePath(scriptPath);
-    if (path === null) {
-      throw new Error("Invalid scriptPath.");
-    }
-
+  private buildBrowserWindow(options: IWindowOptions): BrowserWindow {
     // Creating blank BrowserWindow
     const win = new BrowserWindow(this.buildBrowserWindowOptions(options));
-    win.loadURL("about:blank");
-
-    // Loading script file
-    win.webContents.executeJavaScript(`require("./${path}");`);
+    win.loadFile(INDEX_PATH);
 
     // Remove window menu if necessary
     if (options.showMenu === false) win.removeMenu();
@@ -150,8 +177,9 @@ export class FiruWindow {
       show: get(options.show, true),
       webPreferences: {
         devTools: get(options.devTools, false),
-        nodeIntegration: true,
-        contextIsolation: false,
+        nodeIntegration: get(options.nodeIntegration, false),
+        contextIsolation: get(options.contextIsolation, true),
+        preload: join(__dirname, "firu-preload.js"),
       },
       width: options.width,
       x: options.x,
@@ -166,15 +194,14 @@ export class FiruWindow {
    * @returns sanitized path
    */
   private sanitizePath(path: string): string | null {
-    const correct = path.indexOf("\0") === -1 && /^[a-z0-9\\\/]+$/.test(path);
+    const correct = path.indexOf("\0") === -1 && /^[\.a-z0-9\\\/]+$/.test(path);
     if (!correct || require.main === undefined) {
       return null;
     }
     path = normalize(path).replace(/^(\.\.(\/|\\|$))+/, "");
     const mainFolder = dirname(require.main.filename);
     const root = relative(app.getAppPath(), mainFolder);
-    path = join(root, path);
-    if (path.indexOf(root) !== 0) {
+    if (join(root, path).indexOf(root) !== 0) {
       return null;
     }
     return path.replaceAll("\\", "/");
