@@ -123,7 +123,11 @@ export class FiruWindow {
       }
     }
 
-    windowInfo.addInfo(this, path, preload);
+    console.log(dirname(INDEX_PATH), app.getAppPath());
+    const base = relative(dirname(INDEX_PATH), app.getAppPath());
+    console.log(base);
+
+    windowInfo.addInfo(this, path, preload, base);
   }
 
   /**
@@ -194,7 +198,8 @@ export class FiruWindow {
    * @returns sanitized path
    */
   private sanitizePath(path: string): string | null {
-    const correct = path.indexOf("\0") === -1 && /^[\.a-z0-9\\\/]+$/.test(path);
+    const correct =
+      path.indexOf("\0") === -1 && /^[\.a-z0-9\\\/\_\-]+$/.test(path);
     if (!correct || require.main === undefined) {
       return null;
     }

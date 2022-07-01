@@ -4,6 +4,7 @@ import { FiruWindow } from "./firu-window";
 interface WindowInfo {
   path: string;
   preload: string | undefined;
+  base: string;
 }
 
 /**
@@ -26,11 +27,13 @@ class FiruWindowInfo {
   public addInfo(
     window: FiruWindow,
     path: string,
-    preload: string | undefined
+    preload: string | undefined,
+    base: string
   ): void {
     this._info.set(window.webContents.id, {
       path,
       preload,
+      base,
     });
   }
 
